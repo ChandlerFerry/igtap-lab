@@ -1,0 +1,4 @@
+bin/
+obj/
+*.igtap
+__pycache__/

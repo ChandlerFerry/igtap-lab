@@ -1,0 +1,32 @@
+# IGTAP Lab
+
+A [Recharge](https://github.com/SumDumIdiut/recharge) mod for IGTAP: every tech lab from the IGTAP TAS mod on one map.
+Each lab sits in its own box with its name. The lab's demo plays as a ghost, and an input tracker shows the demo's
+inputs tick by tick, marking yours green (on the tick), amber (1–3 ticks off) or red.
+
+## Install
+
+Install RechargeLoader with Recharge, run `tools/package.ps1`, and extract `igtap-lab.igtap` (a zip) into
+`<game>/Recharge/Mods/chandlerferry.igtaplab/`.
+
+## Play
+
+Pause, **Labs**, pick a lab. Quick restart (or leaving the lab's box) starts the attempt again at the demo's start.
+**Next demo** switches between a lab's demos, and **Exit lab** puts you back where you were, with your unlocks.
+The game doesn't save while you're in a lab.
+
+## Build
+
+```powershell
+python tools/pack.py                         # lists free regions for the pack
+$env:REGION = "-15848,16296"; python tools/pack.py   # labs/world.json from ../IGTAPTasMod/labmaps (IGTAP_TAS overrides)
+tools/package.ps1                            # IgtapLab.dll + igtap-lab.igtap
+dotnet run --project tools/ChipsCheck        # input chips check
+python tools/pack.py --selftest; python tools/pack.py --check
+```
+
+`labs/world.json` is committed. Regenerating it needs an IGTAPTasMod checkout with its built `enginesim` and the game's
+traces; `--selftest` and `--check` need neither.
+
+`IgtapLab.csproj` builds against the Steam install's `Managed` folder; pass `-p:ManagedDir=...` for another install
+and `-p:ModApiDir=...` when `Recharge.ModApi.dll` isn't in it.
