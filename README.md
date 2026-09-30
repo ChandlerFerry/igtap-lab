@@ -6,8 +6,9 @@ inputs tick by tick, marking yours green (on the tick), amber (1–3 ticks off) 
 
 ## Install
 
-Install RechargeLoader with Recharge, run `tools/package.ps1`, and extract `igtap-lab.igtap` (a zip) into
-`<game>/Recharge/Mods/chandlerferry.igtaplab/`.
+Install RechargeLoader with Recharge, download `igtap-lab.zip` from
+[Releases](https://github.com/ChandlerFerry/igtap-lab/releases/latest) (or build it: `tools/package.ps1` writes
+`igtap-lab.igtap`, the same zip), and extract it into `<game>/Recharge/Mods/chandlerferry.igtaplab/`.
 
 ## Play
 
