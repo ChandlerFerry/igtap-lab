@@ -42,6 +42,7 @@ namespace IgtapLab
                 }
                 if (t.dashJump > 0) chips.Add(new Chip { Tick = i, Kind = "dashjump", Label = "jump in dash" });
                 if (t.springDash > 0) chips.Add(new Chip { Tick = i, Kind = "springdash", Label = "dash in spring" });
+                if (t.reset) chips.Add(new Chip { Tick = i, Kind = "restart", Label = "restart" });
                 if (t.pause > 0) chips.Add(new Chip { Tick = i, Kind = "pause", Label = "pause" });
             }
             return chips;

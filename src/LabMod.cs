@@ -13,7 +13,7 @@ namespace IgtapLab
     {
         public string Id => "chandlerferry.igtaplab";
         public string DisplayName => "IGTAP Lab";
-        public Version Version => new Version(1, 0, 0);
+        public Version Version => new Version(1, 1, 0);
 
         internal static IRechargeHost Host;
         internal static WorldDef World;
@@ -22,8 +22,8 @@ namespace IgtapLab
         public void OnLoad(IRechargeHost host)
         {
             Host = host;
-            string path = Path.Combine(Path.GetDirectoryName(typeof(LabMod).Assembly.Location), "labs", "world.json");
-            World = JsonConvert.DeserializeObject<WorldDef>(File.ReadAllText(path));
+            using (var reader = new StreamReader(typeof(LabMod).Assembly.GetManifestResourceStream("world.json")))
+                World = JsonConvert.DeserializeObject<WorldDef>(reader.ReadToEnd());
             _overlay = new GameObject("IgtapLab overlay");
             UnityEngine.Object.DontDestroyOnLoad(_overlay);
             _overlay.AddComponent<LabOverlay>();

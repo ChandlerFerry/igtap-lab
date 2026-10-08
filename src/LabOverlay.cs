@@ -7,6 +7,7 @@ namespace IgtapLab
     public sealed class LabOverlay : MonoBehaviour
     {
         readonly LabTracker tracker = new LabTracker();
+        readonly LabGraze graze = new LabGraze();
         LabGhost ghost;
         DemoDef ghostDemo;
 
@@ -37,6 +38,7 @@ namespace IgtapLab
             DemoDef demo = LabSession.Demo;
             if (lab == null || demo == null || player == null) { DropGhost(); return; }
             tracker.Frame(player);
+            graze.Sample(player);
             if (demo != ghostDemo)
             {
                 DropGhost();
@@ -54,7 +56,11 @@ namespace IgtapLab
 
         void OnGUI()
         {
-            if (LabSession.Current != null && LabSession.Player != null) tracker.Draw(LabSession.Current, LabSession.Player);
+            Movement player = LabSession.Player;
+            if (LabSession.Current == null || player == null) return;
+            // Under the pause menu nothing anchored in the world is drawn: it would sit on top of the menu.
+            if (Event.current.type == EventType.Repaint && (player.pauseMenu == null || !player.pauseMenu.menuOpen)) graze.Draw(player);
+            tracker.Draw(LabSession.Current, player);
         }
     }
 }

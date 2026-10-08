@@ -21,7 +21,7 @@ namespace IgtapLab
         List<Chip> want = new List<Chip>();
         readonly List<Chip> live = new List<Chip>();
         public int Ticks, PhysTicks, Attempts, Successes;
-        bool finished, jumpPressed, jumpReleased, dashPressed, pauseOpened, menuWasOpen;
+        bool finished, jumpPressed, jumpReleased, dashPressed, restartPressed, pauseOpened, menuWasOpen;
         string stick = LabChips.Neutral;
         string lastTurn = "";
         GUIStyle title, right, text;
@@ -32,7 +32,7 @@ namespace IgtapLab
             if (d != demo) { demo = d; want = LabChips.Chips(d.inputs); Attempts = Successes = 0; }
             Attempts++;
             Ticks = 0;
-            jumpPressed = jumpReleased = dashPressed = pauseOpened = false;
+            jumpPressed = jumpReleased = dashPressed = restartPressed = pauseOpened = false;
             finished = false;
             stick = LabChips.Neutral;
             lastTurn = "";
@@ -50,6 +50,8 @@ namespace IgtapLab
             jumpPressed |= (jump != null && jump.WasPressedThisFrame()) || (jump2 != null && jump2.WasPressedThisFrame());
             jumpReleased |= (jump != null && jump.WasReleasedThisFrame()) || (jump2 != null && jump2.WasReleasedThisFrame());
             dashPressed |= (dash != null && dash.WasPressedThisFrame()) || (dash2 != null && dash2.WasPressedThisFrame());
+            var reset = LabSession.ResetAction?.GetValue(p) as InputAction;
+            restartPressed |= reset != null && reset.WasPressedThisFrame();
             bool open = p.pauseMenu != null && p.pauseMenu.menuOpen;
             pauseOpened |= open && !menuWasOpen;
             menuWasOpen = open;
@@ -94,8 +96,9 @@ namespace IgtapLab
             if (jumpPressed) live.Add(new Chip { Tick = Ticks, Kind = "jump", Label = "jump" });
             if (jumpReleased) live.Add(new Chip { Tick = Ticks, Kind = "release", Label = "release" });
             if (dashPressed) live.Add(new Chip { Tick = Ticks, Kind = "dash", Label = "dash" });
+            if (restartPressed) live.Add(new Chip { Tick = Ticks, Kind = "restart", Label = "restart" });
             if (pauseOpened) live.Add(new Chip { Tick = Ticks, Kind = "pause", Label = "pause" });
-            jumpPressed = jumpReleased = dashPressed = pauseOpened = false;
+            jumpPressed = jumpReleased = dashPressed = restartPressed = pauseOpened = false;
             if (inFinish) { finished = true; Successes++; return; }
             Ticks++;
         }
@@ -127,9 +130,10 @@ namespace IgtapLab
             return string.IsNullOrEmpty(keys) ? fallback : keys;
         }
 
-        static string Shown(Chip c, string jump, string dash, string pause)
+        static string Shown(Chip c, string jump, string dash, string pause, string restart)
         {
-            return c.Kind == "jump" ? jump : c.Kind == "release" ? "let go " + jump : c.Kind == "dash" ? dash : c.Kind == "pause" ? pause : c.Label;
+            return c.Kind == "jump" ? jump : c.Kind == "release" ? "let go " + jump : c.Kind == "dash" ? dash : c.Kind == "pause" ? pause
+                : c.Kind == "restart" ? restart : c.Label;
         }
 
         public void Draw(LabDef lab, Movement p)
@@ -146,6 +150,7 @@ namespace IgtapLab
             string jumpKeys = Keys(JumpField?.GetValue(p) as InputAction, JumpField2?.GetValue(p) as InputAction, "Jump");
             string dashKeys = Keys(DashField?.GetValue(p) as InputAction, DashField2?.GetValue(p) as InputAction, "Dash");
             string pauseKeys = Keys(p.pauseMenu != null ? PauseField?.GetValue(p.pauseMenu) as InputAction : null, null, "Pause");
+            string restartKeys = Keys(LabSession.ResetAction?.GetValue(p) as InputAction, null, "Restart");
 
             int?[] match = Match();
             // 1 on time, 2 off by a few ticks, -1 missed, 0 still to do.
@@ -156,7 +161,7 @@ namespace IgtapLab
             {
                 state[i] = match[i] == null ? (Ticks >= want[i].Tick + Grace ? -1 : 0) : match[i] == 0 ? 1 : 2;
                 if (state[i] < 1 && first == want.Count) first = i;
-                if (state[i] < 0 && message == "") message = "missed " + Shown(want[i], jumpKeys, dashKeys, pauseKeys) + " at tick " + want[i].Tick;
+                if (state[i] < 0 && message == "") message = "missed " + Shown(want[i], jumpKeys, dashKeys, pauseKeys, restartKeys) + " at tick " + want[i].Tick;
             }
             if (finished) message = "finish!";
             Color messageColor = finished ? new Color(0.15f, 0.6f, 0.25f, 1f) : new Color(0.7f, 0.18f, 0.15f, 1f);
@@ -167,7 +172,7 @@ namespace IgtapLab
             float pad = 12f * scale, chipsW = -10f * scale;
             for (int i = from; i < to; i++)
             {
-                string label = Shown(want[i], jumpKeys, dashKeys, pauseKeys);
+                string label = Shown(want[i], jumpKeys, dashKeys, pauseKeys, restartKeys);
                 if (state[i] == 2) label += " " + (match[i] > 0 ? "+" : "−") + Mathf.Abs(match[i].Value);
                 labels.Add(label);
                 fills.Add(state[i] == 1 ? Green : state[i] == 2 ? Amber : state[i] < 0 ? Red : Grey);
@@ -210,7 +215,7 @@ namespace IgtapLab
             if (!finished) Fill(new Rect(X(Ticks), barY - 3f, 2f, barH + 6f), Color.white);
         }
 
-        static void Fill(Rect r, Color color)
+        internal static void Fill(Rect r, Color color)
         {
             Color saved = GUI.color;
             GUI.color = color;
@@ -218,7 +223,7 @@ namespace IgtapLab
             GUI.color = saved;
         }
 
-        static void Label(Rect r, string s, GUIStyle style, Color color)
+        internal static void Label(Rect r, string s, GUIStyle style, Color color)
         {
             Color saved = GUI.contentColor;
             GUI.contentColor = color;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 namespace IgtapLab
@@ -29,6 +30,7 @@ namespace IgtapLab
         const BindingFlags Any = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         static readonly FieldInfo IsDead = typeof(Movement).GetField("isDead", Any);
         static readonly MethodInfo Respawn = typeof(Movement).GetMethod("respawn", Any);
+        internal static readonly FieldInfo ResetAction = typeof(Movement).GetField("resetAction", Any);
         static readonly FieldInfo Tracking = typeof(courseScript).GetField("tracking", Any);
         static readonly FieldInfo IsSaving = typeof(Saveloader).GetField("IsSaving", Any);
         static readonly globalStats.globalUpgradeSet[] Upgrades =
@@ -40,8 +42,8 @@ namespace IgtapLab
         // Absolute positions at the lab's old anchor: Place sets both from the start instead.
         static readonly string[] SkippedStartFields = { "respawnPoint", "courseResetPoint" };
 
-        static int _demo;
-        static bool _wasDead;
+        static int _demo, _restarts;
+        static bool _wasDead, _restartPending;
         static Scene _scene;
 
         static Dictionary<FieldInfo, object> _fields;
@@ -100,6 +102,20 @@ namespace IgtapLab
             if (!p.gameObject.activeInHierarchy) return;
             LabWorld.Update();
             if ((bool)IsDead.GetValue(p)) { _wasDead = true; return; }
+            if (Start.respawn != null)
+            {
+                // A checkpoint lab: the attempt's first quick restart lands on the lab's checkpoint (the tech), the next starts it
+                // again. Counted a frame late: Movement.Update, which makes the restart, may run after this.
+                if (_restartPending)
+                {
+                    _restartPending = false;
+                    if (++_restarts > 1) { Place(); return; }
+                }
+                var reset = ResetAction?.GetValue(p) as InputAction;
+                if (reset != null && reset.WasPressedThisFrame() && !p.GamePaused && (p.pauseMenu == null || !p.pauseMenu.menuOpen)) _restartPending = true;
+                if (_wasDead || !InBox(p)) Place();
+                return;
+            }
             // The game's quick restart (and a death respawn with checkpoint respawns off) lands on courseResetPoint and zeroes it.
             if (_wasDead || p.courseResetPoint == Vector2.zero || !InBox(p)) { Place(); return; }
             // courseResetPoint is a scene position: it follows a rebase of the floating origin.
@@ -140,7 +156,8 @@ namespace IgtapLab
             Movement p = Player;
             StartDef start = Start;
             Vector2 scene = StartScene();
-            _wasDead = false;
+            _wasDead = _restartPending = false;
+            _restarts = 0;
 
             bool blockSwap = ApplyCategory(p, Demo?.category ?? Current.category);
             // A pending death respawn would move the player again.
@@ -172,8 +189,17 @@ namespace IgtapLab
             if (blue.HasValue && swapper != null) swapper.swapBlocks(blue.Value);
 
             // Movement.respawn: respawnPoint is in the world frame (it adds the origin), courseResetPoint a scene position; both 12 up.
-            p.respawnPoint = Current.Anchor + new Vector2(start.x ?? 0f, (start.y ?? 0f) + 12f);
-            p.courseResetPoint = scene + new Vector2(0f, 12f);
+            // A checkpoint lab: courseResetPoint zero, so a quick restart goes to its respawnPoint.
+            if (start.respawn != null)
+            {
+                p.respawnPoint = Current.Anchor + new Vector2(start.respawn[0], start.respawn[1]);
+                p.courseResetPoint = Vector2.zero;
+            }
+            else
+            {
+                p.respawnPoint = Current.Anchor + new Vector2(start.x ?? 0f, (start.y ?? 0f) + 12f);
+                p.courseResetPoint = scene + new Vector2(0f, 12f);
+            }
 
             Physics2D.SyncTransforms();
             if (p.cam != null) p.cam.setup(scene, p.cam.camSize);

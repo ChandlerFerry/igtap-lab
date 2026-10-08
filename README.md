@@ -12,7 +12,11 @@ Install RechargeLoader with Recharge, download `igtap-lab.zip` from
 
 ## Play
 
-Pause, **Labs**, pick a lab. Quick restart (or leaving the lab's box) starts the attempt again at the demo's start.
+Pause, **Labs**, pick a lab. Quick restart (or leaving the lab's box) starts the attempt again at the demo's start. In
+the checkpoint labs (`checkpoint-midair-*`, `momentum-after-quick-restart`) the quick restart is the tech: an attempt's
+first lands on the lab's checkpoint, the next starts the attempt again (as does a death).
+Your hurtbox is drawn purple, green while a spike's grace holds, with `SPIKE n/limit` over it while you touch spikes
+and `SPIKE GRACE n/limit` after you live through them.
 **Next demo** switches between a lab's demos, and **Exit lab** puts you back where you were, with your unlocks.
 The game doesn't save while you're in a lab.
 
@@ -26,8 +30,10 @@ dotnet run --project tools/ChipsCheck        # input chips check
 python tools/pack.py --selftest; python tools/pack.py --check
 ```
 
-`labs/world.json` is committed. Regenerating it needs an IGTAPTasMod checkout with its built `enginesim` and the game's
+`labs/world.json` is committed and built into `IgtapLab.dll` (Recharge's own mod build deploys only the DLL and
+`mod.json`). Regenerating it needs an IGTAPTasMod checkout with its built `enginesim` and the game's
 traces; `--selftest` and `--check` need neither.
 
-`IgtapLab.csproj` builds against the Steam install's `Managed` folder; pass `-p:ManagedDir=...` for another install
-and `-p:ModApiDir=...` when `Recharge.ModApi.dll` isn't in it.
+`IgtapLab.csproj` builds against the Steam install's `Managed` folder (`-p:ManagedDir=...` for another install). Where
+RechargeLoader isn't installed (no `Recharge.ModApi.dll` there), it builds the ModApi from a
+[Recharge](https://github.com/SumDumIdiut/recharge) checkout at `../recharge` (`-p:RechargeDir=...` for another).

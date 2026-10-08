@@ -1,7 +1,7 @@
 {
   "id": "chandlerferry.igtaplab",
   "displayName": "IGTAP Lab",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Chandler Ferry",
   "description": "Every IGTAP tech lab on one map, with a ghost of each demo and an input tracker.",
   "entryAssembly": "IgtapLab.dll",

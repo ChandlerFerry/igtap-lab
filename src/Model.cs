@@ -57,6 +57,8 @@ namespace IgtapLab
     {
         public float? x, y, vx, vy, mx, my, facing;
         public bool? blueActive;
+        /// <summary>A checkpoint lab's respawnPoint, anchor-relative: a quick restart lands there (the tech), not at the start.</summary>
+        public float[] respawn;
         public JObject fields;
     }
 
@@ -82,7 +84,7 @@ namespace IgtapLab
     public sealed class InputTick
     {
         public float x, y;
-        public bool press, release, dash;
+        public bool press, release, dash, reset;
         public int dashJump, springDash;
         public float? turnX, turnY;
         public int pause;

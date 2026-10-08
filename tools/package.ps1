@@ -9,11 +9,8 @@ dotnet @build
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 $stage = "$root\obj\package"
 Remove-Item $stage -Recurse -Force -ErrorAction Ignore
-New-Item "$stage\labs" -ItemType Directory | Out-Null
+New-Item $stage -ItemType Directory | Out-Null
 Copy-Item "$root\mod.json", "$root\bin\package\IgtapLab.dll" $stage
-Copy-Item "$root\labs\world.json" "$stage\labs"
-# Explicit entry names: Compress-Archive and ZipFile.CreateFromDirectory on Windows PowerShell 5.1 write `labs\world.json`,
-# which Linux extracts as one file named that.
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 Remove-Item "$root\igtap-lab.igtap" -Force -ErrorAction Ignore
 $zip = [IO.Compression.ZipFile]::Open("$root\igtap-lab.igtap", 'Create')

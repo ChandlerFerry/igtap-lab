@@ -146,7 +146,7 @@ def replay_at(lab, name, d, anchor, tmp):
     return [[round(v, 2) if isinstance(v, float) else v for v in row] for row in path], out
 
 
-INPUT_KEYS = ("x", "y", "press", "release", "dash", "dashJump", "springDash", "turnX", "turnY", "pause")
+INPUT_KEYS = ("x", "y", "press", "release", "dash", "dashJump", "springDash", "turnX", "turnY", "pause", "reset")
 SHAPE_KEYS = ("kind", "at", "size", "points", "layer", "tag", "trigger", "spike", "rotation", "spring", "colour")
 
 
@@ -154,13 +154,25 @@ def shapes_out(ss):
     return [{k: s[k] for k in SHAPE_KEYS if k in s} for s in ss]
 
 
+def start_out(st, lab):
+    """A checkpoint lab's respawnPoint (world frame, at the map's own anchor) as `respawn`, anchor-relative; the lab
+    sets courseResetPoint itself (0,0 in a checkpoint lab: a quick restart goes to respawnPoint)."""
+    fields = dict(st.get("fields") or {})
+    rp, crp = fields.pop("respawnPoint", None), fields.pop("courseResetPoint", None)
+    out = {**st, "fields": fields}
+    if rp is not None and crp == "0,0":
+        x, y = (float(v) for v in rp.split(","))
+        out["respawn"] = [round(x - lab["anchor"][0], 2), round(y - lab["anchor"][1], 2)]
+    return out
+
+
 def lab_out(lab, anchor, paths):
-    demos = [{"name": n, "start": d.get("start") or lab["start"],
+    demos = [{"name": n, "start": start_out(d.get("start") or lab["start"], lab),
               "category": d.get("requires") or lab["category"],
               "inputs": [{k: t[k] for k in INPUT_KEYS if k in t} for t in d["inputs"]],
               "path": paths[(lab["id"], n)]} for n, d in lab["demos"]]
     out = {"id": lab["id"], "name": lab["name"], "category": lab["category"],
-           "anchor": anchor, "box": lab["box"], "shapes": shapes_out(lab["shapes"]), "start": lab["start"],
+           "anchor": anchor, "box": lab["box"], "shapes": shapes_out(lab["shapes"]), "start": start_out(lab["start"], lab),
            "finish": lab["finish"], "demos": demos}
     if lab.get("hand"):
         out["hand"] = {"shapes": shapes_out(lab["hand"]["shapes"]), "start": lab["hand"].get("start")}

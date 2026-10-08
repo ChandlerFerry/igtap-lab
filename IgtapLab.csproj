@@ -6,9 +6,13 @@
     <GenerateDependencyFile>False</GenerateDependencyFile>
     <ManagedDir Condition="'$(ManagedDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\IGTAP an Incremental Game That's Also a Platformer\IGTAPfullGame_Data\Managed</ManagedDir>
     <ModApiDir Condition="'$(ModApiDir)' == ''">$(ManagedDir)</ModApiDir>
+    <!-- Without RechargeLoader installed, the ModApi is built from a Recharge checkout (github.com/SumDumIdiut/recharge). -->
+    <RechargeDir Condition="'$(RechargeDir)' == ''">$(MSBuildThisFileDirectory)../recharge</RechargeDir>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Recharge.ModApi"><HintPath>$(ModApiDir)\Recharge.ModApi.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Recharge.ModApi" Condition="Exists('$(ModApiDir)\Recharge.ModApi.dll')"><HintPath>$(ModApiDir)\Recharge.ModApi.dll</HintPath><Private>false</Private></Reference>
+    <ProjectReference Include="$(RechargeDir)\loader\ModApi\Recharge.ModApi.csproj" Condition="!Exists('$(ModApiDir)\Recharge.ModApi.dll')"
+      AdditionalProperties="ManagedDir=$(ManagedDir)" Private="false" />
     <Reference Include="Assembly-CSharp"><HintPath>$(ManagedDir)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine"><HintPath>$(ManagedDir)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
@@ -24,6 +28,8 @@
     <Reference Include="Newtonsoft.Json"><HintPath>$(ManagedDir)\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <ItemGroup>
+    <!-- In the DLL: Recharge's own mod build deploys only the DLL and mod.json. -->
+    <EmbeddedResource Include="labs\world.json" LogicalName="world.json" />
     <Compile Remove="tools/**" />
   </ItemGroup>
 </Project>
